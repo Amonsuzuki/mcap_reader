@@ -26,8 +26,12 @@ copy these files to your ```/SSH``` directory
 ```python3 ../open_mcap.py rosbag2_2025_09_30_12_52_32_14.mcap --overwrite```
 
 ```python3 ../open_mcap.py rosbag2_2025_09_30_12_52_32_15.mcap --overwrite```
+<img width="1351" height="1333" alt="Image" src="https://github.com/user-attachments/assets/5efb296e-b84a-4332-b38b-5d1ad85d204b" />
 
 ...
+# 4
+```python3 ../open_mcap2.py rosbag2_2025_09_30_12_52_32_13.mcap --overwrite```
+<img width="2341" height="1288" alt="Image" src="https://github.com/user-attachments/assets/56b1d251-9c35-4ced-a541-75d37cbe3c4a" />
 
 # appendix
 You can see which mcap files have valid trajectory information by checking ```/SSH/outputs/log_rosbag2_2025_09_30_12_52_32.txt```
