@@ -28,3 +28,15 @@ copy these files to your ```/SSH``` directory
 ```python3 ../open_mcap.py rosbag2_2025_09_30_12_52_32_15.mcap --overwrite```
 
 ...
+
+# appendix
+You can see which mcap files have valid trajectory information by checking ```/SSH/outputs/log_rosbag2_2025_09_30_12_52_32.txt```
+
+**mcap files which have 40 ~ 70 ekf_x, ekf_y range are valid.**
+
+for example,
+- rosbag2_2025_09_30_12_52_32_11.mcap is <span style="color: red; ">**invalid**</span>
+- rosbag2_2025_09_30_12_52_32_11.mcap is  <span style="color: blue; ">**valid**</span>
+
+
+<img width="1306" height="1261" alt="Image" src="https://github.com/user-attachments/assets/2e3cc3c1-da84-4edd-a711-95236a921668" />
