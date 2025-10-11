@@ -40,3 +40,27 @@ for example,
 
 
 <img width="1306" height="1261" alt="Image" src="https://github.com/user-attachments/assets/2e3cc3c1-da84-4edd-a711-95236a921668" />
+
+
+## sensor values
+
+| **Variable Name**             | **Meaning**                               | **Sensor / Module (Physical Source)**                   | **ROS Topic**                        | **Message Field Path**                             |
+| ----------------------------- | ----------------------------------------- | ------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| `ekf_x`                       | Estimated X position in map               | **Localization module (EKF / State Estimator)**         | `/localization/kinematic_state`      | `msg.pose.pose.position.x`                         |
+| `ekf_y`                       | Estimated Y position                      | **Localization module (EKF / State Estimator)**         | `/localization/kinematic_state`      | `msg.pose.pose.position.y`                         |
+| `ekf_yaw`                     | Estimated yaw angle (heading)             | **Localization module (EKF / State Estimator)**         | `/localization/kinematic_state`      | `euler_from_quaternion(msg.pose.pose.orientation)` |
+| `loc_acc_x`                   | Linear acceleration along X               | **Derived from IMU or localization filter**             | `/localization/acceleration`         | `msg.accel.accel.linear.x`                         |
+| `loc_acc_y`                   | Linear acceleration along Y               | **Derived from IMU or localization filter**             | `/localization/acceleration`         | `msg.accel.accel.linear.y`                         |
+| `vx`                          | Longitudinal vehicle speed                | **Wheel speed sensor or vehicle CAN bus**               | `/vehicle/status/velocity_status`    | `msg.longitudinal_velocity`                        |
+| `vy`                          | Lateral vehicle speed                     | **Estimated (from vehicle dynamics model)**             | `/vehicle/status/velocity_status`    | `msg.lateral_velocity`                             |
+| `steer`                       | Measured steering tire angle              | **Steering angle sensor (CAN)**                         | `/vehicle/status/steering_status`    | `msg.steering_tire_angle`                          |
+| `gyro_z`                      | Angular velocity around Z-axis (yaw rate) | **IMU gyroscope**                                       | `/sensing/imu/imu_data`              | `msg.angular_velocity.z`                           |
+| `gnss_x`                      | GNSS-based X coordinate                   | **GNSS receiver (GPS/RTK)**                             | `/sensing/gnss/pose_with_covariance` | `msg.pose.pose.position.x`                         |
+| `gnss_y`                      | GNSS-based Y coordinate                   | **GNSS receiver (GPS/RTK)**                             | `/sensing/gnss/pose_with_covariance` | `msg.pose.pose.position.y`                         |
+| `gnss_z`                      | GNSS altitude                             | **GNSS receiver (GPS/RTK)**                             | `/sensing/gnss/pose_with_covariance` | `msg.pose.pose.position.z`                         |
+| `steering_tire_angle_command` | Commanded steering angle                  | **Control module (Path tracking / Lateral controller)** | `/control/command/control_cmd`       | `msg.lateral.steering_tire_angle`                  |
+| `speed_command`               | Commanded longitudinal speed              | **Control module (Longitudinal controller)**            | `/control/command/control_cmd`       | `msg.longitudinal.speed`                           |
+| `acceleration_command`        | Commanded longitudinal acceleration       | **Control module (Longitudinal controller)**            | `/control/command/control_cmd`       | `msg.longitudinal.acceleration`                    |
+| `actuation_accel_cmd`         | Throttle actuator command                 | **Vehicle actuator interface (Drive-by-wire ECU)**      | `/control/command/actuation_cmd`     | `msg.actuation.accel_cmd`                          |
+| `actuation_brake_cmd`         | Brake actuator command                    | **Vehicle actuator interface (Drive-by-wire ECU)**      | `/control/command/actuation_cmd`     | `msg.actuation.brake_cmd`                          |
+| `actuation_steer_cmd`         | Steering actuator command                 | **Vehicle actuator interface (Drive-by-wire ECU)**      | `/control/command/actuation_cmd`     | `msg.actuation.steer_cmd`                          |
