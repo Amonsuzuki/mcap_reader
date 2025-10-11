@@ -1,0 +1,494 @@
+
+./rosbag2_2025_09_30_16_52_17_0.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0        89673.363687
+1        89673.363682
+2        89673.363682
+3        89673.363682
+4        89673.363595
+             ...     
+10813    89670.413102
+10814    89670.413102
+10815    89670.413102
+10816             NaN
+10817             NaN
+Name: ekf_x, Length: 10818, dtype: float64
+ekf_x range: 2.9505850058194483
+ekf_y range: 4.04256033256388
+
+./rosbag2_2025_09_30_16_52_17_1.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89670.411298
+2        89670.411287
+3        89670.411277
+4        89670.411267
+             ...     
+11995    89671.536285
+11996    89671.536285
+11997    89671.536285
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 1.4047363658901304
+ekf_y range: 1.429570902211708
+
+./rosbag2_2025_09_30_16_52_17_10.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.374446
+3        89673.374446
+4        89673.374446
+             ...     
+11995    89673.371388
+11996    89673.371374
+11997    89673.371359
+11998    89673.371345
+11999    89673.371330
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.01118755349307321
+ekf_y range: 0.005708897100703325
+
+./rosbag2_2025_09_30_16_52_17_11.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.371329
+3        89673.371329
+4        89673.371329
+             ...     
+11995    89673.355386
+11996    89673.355386
+11997    89673.355386
+11998    89673.355386
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.015984752506483346
+ekf_y range: 0.010473482099769171
+
+./rosbag2_2025_09_30_16_52_17_12.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.355399
+2        89673.355399
+3        89673.355399
+4        89673.355399
+             ...     
+11996    89673.361255
+11997    89673.361255
+11998    89673.361255
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.008443336351774633
+ekf_y range: 0.004975697782356292
+
+./rosbag2_2025_09_30_16_52_17_13.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.361205
+3        89673.361205
+4        89673.361205
+             ...     
+11995    89673.363443
+11996    89673.363443
+11997    89673.363443
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.007702955597778782
+ekf_y range: 0.004632460710126907
+
+./rosbag2_2025_09_30_16_52_17_14.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.363545
+3        89673.363545
+4        89673.363545
+             ...     
+11996    89673.363399
+11997    89673.363399
+11998             NaN
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.0064137260196730494
+ekf_y range: 0.004334031473263167
+
+./rosbag2_2025_09_30_16_52_17_15.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.363495
+2        89673.363495
+3        89673.363495
+4        89673.363495
+             ...     
+11995    89673.352685
+11996    89673.352685
+11997             NaN
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.012242257915204391
+ekf_y range: 0.007753144942398649
+
+./rosbag2_2025_09_30_16_52_17_16.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.352729
+3        89673.352729
+4        89673.352729
+             ...     
+11995    89673.356028
+11996    89673.356028
+11997             NaN
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.009196480124955997
+ekf_y range: 0.007239976534037851
+
+./rosbag2_2025_09_30_16_52_17_17.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.356027
+3        89673.356027
+4        89673.356027
+             ...     
+11996    89673.350848
+11997             NaN
+11998             NaN
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.011789621377829462
+ekf_y range: 0.008680069397087209
+
+./rosbag2_2025_09_30_16_52_17_18.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.350836
+2        89673.350836
+3        89673.350836
+4        89673.350836
+             ...     
+11995    89673.362248
+11996    89673.362254
+11997    89673.362274
+11998    89673.362295
+11999    89673.362315
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.013179180503357202
+ekf_y range: 0.00945620331185637
+
+./rosbag2_2025_09_30_16_52_17_19.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+0                 NaN
+1        89673.362330
+2        89673.362330
+3        89673.362330
+4        89673.362330
+             ...     
+11995    89673.370274
+11996    89673.370279
+11997    89673.370287
+11998    89673.370294
+11999    89673.370302
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.012849412611103617
+ekf_y range: 0.009890917499433272
+
+./rosbag2_2025_09_30_16_52_17_2.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89671.536423
+3        89671.536424
+4        89671.536424
+             ...     
+11996    89671.569970
+11997    89671.569970
+11998             NaN
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.03354700515046716
+ekf_y range: 0.050288081089092884
+
+./rosbag2_2025_09_30_16_52_17_20.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.370309
+3        89673.370309
+4        89673.370309
+             ...     
+11996    89673.360839
+11997    89673.360843
+11998    89673.360846
+11999    89673.360850
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.016455293414765038
+ekf_y range: 0.01286164163320791
+
+./rosbag2_2025_09_30_16_52_17_21.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+0                 NaN
+1        89673.360853
+2        89673.360853
+3        89673.360853
+4        89673.360853
+             ...     
+11995    89663.743796
+11996    89663.743786
+11997    89663.743776
+11998    89663.743766
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 9.683700539346319
+ekf_y range: 7.941401863899955
+
+./rosbag2_2025_09_30_16_52_17_22.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89663.743762
+3        89663.743762
+4        89663.743762
+             ...     
+11995    89642.448067
+11996    89642.448071
+11997    89642.448075
+11998    89642.448079
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 21.627849641867215
+ekf_y range: 6.155145651478961
+
+./rosbag2_2025_09_30_16_52_17_23.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89642.448082
+3        89642.448082
+4        89642.448082
+             ...     
+11996    89633.963232
+11997    89633.963226
+11998    89633.963219
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 8.599408511334332
+ekf_y range: 6.619587997287454
+
+./rosbag2_2025_09_30_16_52_17_24.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+0                 NaN
+1        89633.963215
+2        89633.963215
+3        89633.963215
+4        89633.963215
+             ...     
+11995    89633.956650
+11996    89633.956670
+11997    89633.956688
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.008291442776680924
+ekf_y range: 0.012637036546948366
+
+./rosbag2_2025_09_30_16_52_17_25.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+0                NaN
+1                NaN
+2       89633.956702
+3       89633.956701
+4       89633.956701
+            ...     
+3449    89633.967473
+3450             NaN
+3451             NaN
+3452             NaN
+3453             NaN
+Name: ekf_x, Length: 3454, dtype: float64
+ekf_x range: 0.012954872276168317
+ekf_y range: 0.01015240164269926
+
+./rosbag2_2025_09_30_16_52_17_3.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89671.569998
+3        89671.569998
+4        89671.569998
+             ...     
+11996    89673.372063
+11997             NaN
+11998             NaN
+11999             NaN
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 1.8028730904625263
+ekf_y range: 2.314039932578453
+
+./rosbag2_2025_09_30_16_52_17_4.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.372144
+2        89673.372144
+3        89673.372144
+4        89673.372144
+             ...     
+11995    89673.378545
+11996             NaN
+11997             NaN
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.013078324103844352
+ekf_y range: 0.004545273070107214
+
+./rosbag2_2025_09_30_16_52_17_5.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.378528
+2        89673.378528
+3        89673.378528
+4        89673.378528
+             ...     
+11995    89673.379405
+11996             NaN
+11997             NaN
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.007432101192534901
+ekf_y range: 0.004164949896221515
+
+./rosbag2_2025_09_30_16_52_17_6.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.379508
+2        89673.379508
+3        89673.379509
+4        89673.379509
+             ...     
+11995    89673.372794
+11996             NaN
+11997             NaN
+11998             NaN
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.012427576002664864
+ekf_y range: 0.007349795901973266
+
+./rosbag2_2025_09_30_16_52_17_7.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.372759
+2        89673.372759
+3        89673.372759
+4        89673.372759
+             ...     
+11995    89673.360152
+11996    89673.360140
+11997    89673.360111
+11998    89673.360082
+11999    89673.360054
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.01740557853190694
+ekf_y range: 0.009673418418969959
+
+./rosbag2_2025_09_30_16_52_17_8.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1                 NaN
+2        89673.360029
+3        89673.360029
+4        89673.360029
+             ...     
+11996    89673.370486
+11997    89673.370475
+11998    89673.370465
+11999    89673.370454
+12000             NaN
+Name: ekf_x, Length: 12001, dtype: float64
+ekf_x range: 0.017589445982594043
+ekf_y range: 0.007147679483750835
+
+./rosbag2_2025_09_30_16_52_17_9.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_16_52_17/control_command_control_cmd.csv is empty, skipping
+0                 NaN
+1        89673.370446
+2        89673.370446
+3        89673.370446
+4        89673.370446
+             ...     
+11995    89673.374443
+11996    89673.374444
+11997    89673.374445
+11998    89673.374446
+11999             NaN
+Name: ekf_x, Length: 12000, dtype: float64
+ekf_x range: 0.008539862479665317
+ekf_y range: 0.004965348714904394

@@ -1,0 +1,19 @@
+
+./rosbag2_2025_09_30_17_17_49_0.mcap
+converting bag to csv
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_17_17_49/control_command_actuation_cmd.csv is empty, skipping
+/aichallenge/workspace/log/SSH/rosbag2_2025_09_30_17_17_49/control_command_control_cmd.csv is empty, skipping
+0       89633.970551
+1       89633.970551
+2       89633.970551
+3       89633.970568
+4       89633.970622
+            ...     
+7729    89633.961722
+7730    89633.961722
+7731             NaN
+7732             NaN
+7733             NaN
+Name: ekf_x, Length: 7734, dtype: float64
+ekf_x range: 2.011634596812655
+ekf_y range: 0.03136204076872673
