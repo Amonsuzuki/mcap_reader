@@ -36,7 +36,7 @@ You can see which mcap files have valid trajectory information by checking ```/S
 
 for example,
 - rosbag2_2025_09_30_12_52_32_11.mcap is **invalid**
-- rosbag2_2025_09_30_12_52_32_11.mcap is  **valid**
+- rosbag2_2025_09_30_12_52_32_12.mcap is  **valid**
 
 
 <img width="1306" height="1261" alt="Image" src="https://github.com/user-attachments/assets/2e3cc3c1-da84-4edd-a711-95236a921668" />
