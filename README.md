@@ -32,7 +32,7 @@ copy these files to your ```/SSH``` directory
 # appendix
 You can see which mcap files have valid trajectory information by checking ```/SSH/outputs/log_rosbag2_2025_09_30_12_52_32.txt```
 
-**mcap files which have 40 ~ 70 ekf_x, ekf_y range are valid.**
+**Valid mcap files have 40 ~ 70 ekf_x, ekf_y range.**
 
 for example,
 - rosbag2_2025_09_30_12_52_32_11.mcap is **invalid**
