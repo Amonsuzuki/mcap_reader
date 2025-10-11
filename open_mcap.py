@@ -383,8 +383,8 @@ def plot_trajectory(
         ):
     fig, ax = plt.subplots(1, 1, figsize=(16, 10))
 
-    #if map_yaml_path != "":
-        #plot_map_in_world(ax, load_occupancy_grid_map(map_yaml_path))
+    if map_yaml_path != "":
+        plot_map_in_world(ax, load_occupancy_grid_map(map_yaml_path))
 
     if reference_path_csv_path != "":
         plot_reference_path(ax, load_reference_path(reference_path_csv_path))
@@ -406,7 +406,6 @@ def plot_trajectory(
 
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
 
-    """
     if plot_gyro_odom:
         compute_gyro_odometry(df)
 
@@ -470,7 +469,6 @@ def plot_trajectory(
                     fontsize=6,
                     color="blue",
                     )
-    """
     ax.ticklabel_format(useOffset=False, style='plain', axis='both')
     ax.legend()
     ax.grid()
@@ -478,8 +476,8 @@ def plot_trajectory(
 
     if save:
         save_plot(fig, f"trajectory", save)
-    #else:
-    #    plt.show()
+    else:
+        plt.show()
 
     plt.clf()
     plt.close()
