@@ -38,5 +38,9 @@ for example,
 - rosbag2_2025_09_30_12_52_32_11.mcap is <span style="color: red; ">**invalid**</span>
 - rosbag2_2025_09_30_12_52_32_11.mcap is  <span style="color: blue; ">**valid**</span>
 
+- rosbag2_2025_09_30_12_52_32_11.mcap is <font color="red"><b>invalid</b></font>  
+- rosbag2_2025_09_30_12_52_32_11.mcap is <font color="blue"><b>valid</b></font>
+
+
 
 <img width="1306" height="1261" alt="Image" src="https://github.com/user-attachments/assets/2e3cc3c1-da84-4edd-a711-95236a921668" />
