@@ -16,6 +16,7 @@ import yaml
 from os import path
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
+import math
 
 class TopicHandlerRegistry:
     _registry = {}
@@ -212,6 +213,29 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 
     return dataframes
 
+def clip_duplication(dataframes):
+    df = dataframes["/localization/kinematic_state"]
+    clipping_index = None
+    for index in range(len(df["ekf_x"])):
+        if index <= 10:
+            continue
+        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.1:
+            clipping_index = index
+    if clipping_index:
+        df_tmp = df["ekf_x"]
+        df["ekf_x"] = df_tmp[df_tmp.index < clipping_index]
+
+        df_tmp = df["ekf_y"]
+        df["ekf_y"] = df_tmp[df_tmp.index < clipping_index]
+
+        df_tmp = df["ekf_yaw"]
+        df["ekf_yaw"] = df_tmp[df_tmp.index < clipping_index]
+        dataframes["/localization/kinematic_state"] = df
+    return dataframes
+
+
+
+
 def interpolate_dataframes(dataframes: dict):
     longest_key = max(dataframes, key=lambda key: len(dataframes[key]["stamp"]))
     longest_df = dataframes[longest_key]
@@ -248,6 +272,53 @@ def interpolate_dataframes(dataframes: dict):
             ) / 1e9 # still UNIX timestamp
 
     return combined_df
+
+def load_section():
+    csv_path = Path.cwd().parent / "section.csv"
+    if not csv_path.exists():
+        print(f"{csv_path} not found")
+        return
+    sections = pd.read_csv(csv_path)
+    return sections
+
+def find_nearest_plot(df, sections):
+    nearest_plots = []
+    previous_distance = float('inf')
+
+    counter = 1
+    initial_index = 0
+    for _ in range(len(df.ekf_x) - 2):
+        current_distance = math.sqrt((sections["sec_x"][0] - df.ekf_x[counter]) ** 2 + (sections["sec_y"][0] - df.ekf_y[counter]) ** 2)
+        if current_distance < previous_distance:
+            previous_distance = current_distance
+            initial_index = counter
+        counter += 1
+    print("initial_index: ", initial_index)
+
+    previous_distance = float('inf')
+    index = initial_index
+    accumulated_distance = 0
+
+    for row in sections.iloc:
+        while True:
+            current_distance = math.sqrt((row.sec_x - df.ekf_x[index]) ** 2 + (row.sec_y - df.ekf_y[index]) ** 2)
+            if current_distance > previous_distance:
+                break
+            previous_distance = current_distance
+            index += 1
+            if index >= len(df.ekf_x):
+                index = 1
+            if not np.isnan(df.ekf_x[index]) and not  np.isnan(df.ekf_x[index - 1]):
+                accumulated_distance += math.sqrt((df.ekf_x[index] - df.ekf_x[index - 1]) ** 2 + (df.ekf_y[index] - df.ekf_y[index - 1]) ** 2)
+        if np.isnan(df.ekf_x[index - 1]): # index - 1 == 0
+            nearest_plots.append((df.ekf_x[index], df.ekf_y[index], accumulated_distance))
+        else:
+            nearest_plots.append((df.ekf_x[index - 1], df.ekf_y[index - 1], accumulated_distance))
+        previous_distance = float('inf')
+        accumulated_distance = 0
+
+    return nearest_plots
+
 
 def map_to_world(mx, my, origin, size, resolution):
     pgm_mx = int(mx + 0.5)
@@ -369,6 +440,8 @@ def m_per_sec_to_kmh(m_per_sec):
 def plot_trajectory(
         dataframes,
         df,
+        sections,
+        nearest_plots,
         t_start=None,
         t_end=None,
         plot_gyro_odom=False,
@@ -391,20 +464,11 @@ def plot_trajectory(
 
     t0, t1 = get_index_from_time(df, t_start, t_end)
 
-    """
-    num = (df["ekf_x"] != 0).sum()
-    print(num)
-
-    print("ekf_x nonzero count:", (df.ekf_x != 0).sum())
-    print("ekf_y nonzero count:", (df.ekf_y != 0).sum())
-    print("ekf_x range:", df.ekf_x.min(), "→", df.ekf_x.max())
-    print("ekf_y range:", df.ekf_y.min(), "→", df.ekf_y.max())
-    print("DataFrame shape:", df.shape)
-    """
-
-
-
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
+
+    ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
+
+    ax.plot([p[0] for p in nearest_plots], [p[1] for p in nearest_plots], "*", markersize=15.0, label="nearest_plots")
 
     if plot_gyro_odom:
         compute_gyro_odometry(df)
@@ -485,6 +549,7 @@ def plot_trajectory(
 
 
 def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=True, save=False):
+    flg = True
     return
 
 def try_load_mpc_config():
@@ -555,16 +620,27 @@ def main(argv=sys.argv):
 
     dataframes = load_csv(active_handlers)
 
+    dataframes = clip_duplication(dataframes)
+    #print(dataframes)
+
     df = interpolate_dataframes(dataframes)
     print(df.ekf_x)
     print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
     print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
 
+    sections = load_section()
+    nearest_plots = find_nearest_plot(df, sections)
+
+    for i in nearest_plots:
+        print(i)
+
     plot_trajectory(
             dataframes,
             df,
+            sections,
+            nearest_plots,
             plot_gyro_odom=False,
-            plot_gnss=True,
+            plot_gnss=False,
             plot_orientation=False,
             plot_velocity_text=True,
             map_yaml_path=args.map_yaml_path,
