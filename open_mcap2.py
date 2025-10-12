@@ -617,17 +617,18 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
     ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd, label="brake pedal [cmd, 0~1]")
 
     section_stamps = []
+    top_ticks = []
     for i in range(len(nearest_plots)):
         for j in range(len(df.ekf_x)):
             if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
                 section_stamps.append(df.stamp[j])
+                break
+        top_ticks.append(nearest_plots[i][3])
 
     ax[0].set_xticks(section_stamps)
+    ax[0].set_xticklabels(f"{str(a)} [{str(b)}]" for a, b in zip(section_stamps, top_ticks))
     ax[1].set_xticks(section_stamps)
-
-    ax2 = ax.twiny()
-    ax2[0].set_xticklabels(nearest_plots[3])
-    ax2[1].set_xticklabels(nearest_plots[3])
+    ax[1].set_xticklabels(f"{str(a)} [{str(b)}]" for a, b in zip(section_stamps, top_ticks))
 
     # steer
     ax[1].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")

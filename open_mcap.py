@@ -213,13 +213,14 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 
     return dataframes
 
+# cutting down too much
 def clip_duplication(dataframes):
     df = dataframes["/localization/kinematic_state"]
     clipping_index = None
     for index in range(len(df["ekf_x"])):
         if index <= 10:
             continue
-        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.1:
+        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.001:
             clipping_index = index
     if clipping_index:
         df_tmp = df["ekf_x"]
