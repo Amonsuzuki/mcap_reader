@@ -18,6 +18,7 @@ from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
 from scipy.signal import butter, filtfilt
 import matplotlib.ticker as ticker
+import math
 
 class TopicHandlerRegistry:
     _registry = {}
@@ -214,6 +215,28 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 
     return dataframes
 
+def clip_duplication(dataframes):
+    df = dataframes["/localization/kinematic_state"]
+    clipping_index = None
+    for index in range(len(df["ekf_x"])):
+        if index <= 10:
+            continue
+        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.1:
+            clipping_index = index
+    if clipping_index:
+        df_tmp = df["ekf_x"]
+        df["ekf_x"] = df_tmp[df_tmp.index < clipping_index]
+
+        df_tmp = df["ekf_y"]
+        df["ekf_y"] = df_tmp[df_tmp.index < clipping_index]
+
+        df_tmp = df["ekf_yaw"]
+        df["ekf_yaw"] = df_tmp[df_tmp.index < clipping_index]
+        dataframes["/localization/kinematic_state"] = df
+    return dataframes
+
+
+
 def interpolate_dataframes(dataframes: dict):
     longest_key = max(dataframes, key=lambda key: len(dataframes[key]["stamp"]))
     longest_df = dataframes[longest_key]
@@ -250,6 +273,56 @@ def interpolate_dataframes(dataframes: dict):
             ) / 1e9 # still UNIX timestamp
 
     return combined_df
+
+def load_section():
+    csv_path = Path.cwd().parent / "section.csv"
+    if not csv_path.exists():
+        print(f"{csv_path} not found")
+        return
+    sections = pd.read_csv(csv_path)
+    return sections
+
+def find_nearest_plot(df, sections):
+    nearest_plots = []
+    previous_distance = float('inf')
+
+    counter = 1
+    initial_index = 0
+    for _ in range(len(df.ekf_x) - 2):
+        current_distance = math.sqrt((sections["sec_x"][0] - df.ekf_x[counter]) ** 2 + (sections["sec_y"][0] - df.ekf_y[counter]) ** 2)
+        if current_distance < previous_distance:
+            previous_distance = current_distance
+            initial_index = counter
+        counter += 1
+    print("initial_index: ", initial_index)
+
+    previous_distance = float('inf')
+    index = initial_index
+    accumulated_distance = 0
+
+    incrementer = 0
+    for row in sections.iloc:
+        while True:
+            current_distance = math.sqrt((row.sec_x - df.ekf_x[index]) ** 2 + (row.sec_y - df.ekf_y[index]) ** 2)
+            if current_distance > previous_distance:
+                break
+            previous_distance = current_distance
+            index += 1
+            if index >= len(df.ekf_x):
+                index = 1
+            if not np.isnan(df.ekf_x[index]) and not  np.isnan(df.ekf_x[index - 1]):
+                accumulated_distance += math.sqrt((df.ekf_x[index] - df.ekf_x[index - 1]) ** 2 + (df.ekf_y[index] - df.ekf_y[index - 1]) ** 2)
+        if np.isnan(df.ekf_x[index - 1]): # index - 1 == 0
+            nearest_plots.append((df.ekf_x[index], df.ekf_y[index], accumulated_distance, incrementer))
+        else:
+            nearest_plots.append((df.ekf_x[index - 1], df.ekf_y[index - 1], accumulated_distance, incrementer))
+        previous_distance = float('inf')
+        accumulated_distance = 0
+        incrementer += 1
+
+    return nearest_plots
+
+
 
 def map_to_world(mx, my, origin, size, resolution):
     pgm_mx = int(mx + 0.5)
@@ -520,7 +593,7 @@ def interactive_compute_slope(ax):
 
 
 
-def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=False, save=False):
+def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot_acc=False, save=False):
     t0, t1 = get_index_from_time(df, t_start, t_end)
 
     dt = np.diff(df.stamp[t0:t1])
@@ -534,6 +607,8 @@ def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=False, sav
 
     fig, ax = plt.subplots(2, 1, figsize=(10, 6))
 
+    print(df.stamp[t0:t1])
+
     # accel
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
@@ -541,6 +616,18 @@ def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=False, sav
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd, label="accel pedal [cmd, 0~1]")
     ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd, label="brake pedal [cmd, 0~1]")
 
+    section_stamps = []
+    for i in range(len(nearest_plots)):
+        for j in range(len(df.ekf_x)):
+            if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
+                section_stamps.append(df.stamp[j])
+
+    ax[0].set_xticks(section_stamps)
+    ax[1].set_xticks(section_stamps)
+
+    ax2 = ax.twiny()
+    ax2[0].set_xticklabels(nearest_plots[3])
+    ax2[1].set_xticklabels(nearest_plots[3])
 
     # steer
     ax[1].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
@@ -555,9 +642,12 @@ def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=False, sav
     ax[0].set_ylim([-10.0, 40.0])
     #ax[0].set_ylim([-2.0, 10.0])
     ax[0].legend()
-    ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
+    #ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
     ax[0].yaxis.set_major_locator(ticker.MultipleLocator(5.0))
     ax[0].grid(True, which="both")
+
+    ax[0].tick_params(axis='x', rotation=30)
+    ax[1].tick_params(axis='x', rotation=30)
 
     if plot_acc:
         ax[1].plot(df.stamp[t0 + 1 : t1], 3.6 * acc_x, label="acc_x [measured]")
@@ -638,11 +728,19 @@ def main(argv=sys.argv):
     convert_bag_to_csv(args.input_bag, active_handlers, args.overwrite)
 
     dataframes = load_csv(active_handlers)
+    dataframes = clip_duplication(dataframes)
 
     df = interpolate_dataframes(dataframes)
     print(df.ekf_x)
     print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
     print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
+
+    sections = load_section()
+    nearest_plots = find_nearest_plot(df, sections)
+    for i in nearest_plots:
+        print(i)
+
+
 
     """
     plot_trajectory(
@@ -659,7 +757,7 @@ def main(argv=sys.argv):
             )
     """
 
-    plot_velocity_acceleration(df, save=False)
+    plot_velocity_acceleration(df, nearest_plots, save=False)
 
     #plot_gnss_and_ekf_with_phase_diff
 

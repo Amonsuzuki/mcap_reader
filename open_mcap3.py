@@ -16,6 +16,8 @@ import yaml
 from os import path
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
+from scipy.signal import butter, filtfilt
+import matplotlib.ticker as ticker
 import math
 
 class TopicHandlerRegistry:
@@ -235,7 +237,6 @@ def clip_duplication(dataframes):
 
 
 
-
 def interpolate_dataframes(dataframes: dict):
     longest_key = max(dataframes, key=lambda key: len(dataframes[key]["stamp"]))
     longest_df = dataframes[longest_key]
@@ -318,6 +319,7 @@ def find_nearest_plot(df, sections):
         accumulated_distance = 0
 
     return nearest_plots
+
 
 
 def map_to_world(mx, my, origin, size, resolution):
@@ -440,8 +442,6 @@ def m_per_sec_to_kmh(m_per_sec):
 def plot_trajectory(
         dataframes,
         df,
-        sections,
-        nearest_plots,
         t_start=None,
         t_end=None,
         plot_gyro_odom=False,
@@ -464,11 +464,20 @@ def plot_trajectory(
 
     t0, t1 = get_index_from_time(df, t_start, t_end)
 
+    """
+    num = (df["ekf_x"] != 0).sum()
+    print(num)
+
+    print("ekf_x nonzero count:", (df.ekf_x != 0).sum())
+    print("ekf_y nonzero count:", (df.ekf_y != 0).sum())
+    print("ekf_x range:", df.ekf_x.min(), "→", df.ekf_x.max())
+    print("ekf_y range:", df.ekf_y.min(), "→", df.ekf_y.max())
+    print("DataFrame shape:", df.shape)
+    """
+
+
+
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
-
-    ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
-
-    ax.plot([p[0] for p in nearest_plots], [p[1] for p in nearest_plots], "*", markersize=15.0, label="nearest_plots")
 
     if plot_gyro_odom:
         compute_gyro_odometry(df)
@@ -546,11 +555,92 @@ def plot_trajectory(
     plt.clf()
     plt.close()
 
+def lowpass_filter(data, cutoff_freq, fs, order=5):
+    nyquist_freq = 0.5 * fs
+    normal_cutoff = cutoff_freq / nyquist_freq
+    b, a = butter(order, normal_cutoff, btype="low", analog=False)
+    y = filtfilt(b, a, data)
+    return y
+
+def interactive_compute_slope(ax):
+    while True:
+        points = plt.ginput(2, timeout=-1)
+        if len(points) < 2:
+            print("Exiting...")
+            break
+
+        x1, y1 = points[0]
+        x2, y2 = points[1]
+        if x2 != x1:
+            slope = (y2 - y1) / (x2 - x1)
+            slope_text_str = f"Slope: {slope:.2f}"
+        else:
+            slope_text_str = "Slope: undefined"
+
+        (line,) = ax.plot([x1, x2], [y1, y2], "r--", linewidth=2)
+
+        slope_text = ax.text(
+                (x1 + x2) / 2,
+                (y1 + y2) / 2,
+                slope_text_str,
+                color="blue",
+                fontsize=10,
+                ha="center",
+                )
+        plt.draw()
 
 
-def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=True, save=False):
-    flg = True
-    return
+
+def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot_acc=False, save=False):
+    t0, t1 = get_index_from_time(df, t_start, t_end)
+
+    dt = np.diff(df.stamp[t0:t1])
+    acc_x = np.diff(df.vx[t0:t1]) / dt
+    acc_rz = np.diff(df.gyro_z[t0:t1]) / dt
+
+    cutoff_frequency = 1.0
+    sampling_rate = 1.0 / np.average(dt)
+    acc_x = lowpass_filter(acc_x, cutoff_frequency, sampling_rate)
+    acc_rz = lowpass_filter(acc_rz, cutoff_frequency, sampling_rate)
+
+    fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+
+
+    # accel
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.acceleration_command[t0:t1], label="accel [cmd]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd, label="accel pedal [cmd, 0~1]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd, label="brake pedal [cmd, 0~1]")
+
+
+    # steer
+    ax[1].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
+    ax[1].plot(df.stamp[t0:t1], df.steering_tire_angle_command[t0:t1], label="steer [cmd]")
+    #ax[1].plot(df.stamp[t0:t1], df.actuation_steer_cmd[t0:t1], label="actuator_steer [cmd]") # same value as above
+    ax[1].plot(df.stamp[t0:t1], df.gyro_z[t0:t1], label="yaw [measured]")
+    ax[1].legend()
+    ax[1].yaxis.set_major_locator(ticker.MultipleLocator(1.0))
+    ax[1].grid(True, which="both")
+
+
+    ax[0].set_ylim([-10.0, 40.0])
+    ax[0].legend()
+    ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
+    ax[0].yaxis.set_major_locator(ticker.MultipleLocator(5.0))
+    ax[0].grid(True, which="both")
+
+    if plot_acc:
+        ax[1].plot(df.stamp[t0 + 1 : t1], 3.6 * acc_x, label="acc_x [measured]")
+        ax[1].plot(df.stamp[t0:t1], 3.6 * df.loc_acc_x[t0:t1], label="loc_acc_x [measured]")
+        ax[1].legend()
+        ax[1].yaxis.set_major_locator(ticker.MultipleLocator(2.0))
+        ax[1].grid(True, which="both")
+
+    interactive_compute_slope(ax[0])
+    save_plot(fig, f"velocity_acceleration_{t0}_{t1}", save)
+    plt.clf()
+    plt.close()
 
 def try_load_mpc_config():
     try:
@@ -629,16 +719,14 @@ def main(argv=sys.argv):
     sections = load_section()
     nearest_plots = find_nearest_plot(df, sections)
 
-    for i in nearest_plots:
-        print(i)
 
+
+    """
     plot_trajectory(
             dataframes,
             df,
-            sections,
-            nearest_plots,
             plot_gyro_odom=False,
-            plot_gnss=False,
+            plot_gnss=True,
             plot_orientation=False,
             plot_velocity_text=True,
             map_yaml_path=args.map_yaml_path,
@@ -646,8 +734,13 @@ def main(argv=sys.argv):
             reference_path_csv_path="",
             save=False,
             )
+    """
 
-    plot_velocity_acceleration(df, plot_acc=True, save=False)
+    plot_velocity_acceleration(df, nearest_plots, save=False)
+
+    #plot_gnss_and_ekf_with_phase_diff
+
+    rclpy.shutdown()
 
 
 
