@@ -218,12 +218,16 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 def clip_duplication(dataframes):
     df = dataframes["/localization/kinematic_state"]
     clipping_index = None
+    print("start position: ", df.ekf_x[1], df.ekf_y[1])
     for index in range(len(df["ekf_x"])):
-        if index <= 10:
+        if index <= 50:
             continue
         if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.1:
             clipping_index = index
     if clipping_index:
+        print("end position: ", df.ekf_x[clipping_index], df.ekf_y[clipping_index])
+        print("index range: 1 ~ ", clipping_index)
+
         df_tmp = df["ekf_x"]
         df["ekf_x"] = df_tmp[df_tmp.index < clipping_index]
 
@@ -233,6 +237,8 @@ def clip_duplication(dataframes):
         df_tmp = df["ekf_yaw"]
         df["ekf_yaw"] = df_tmp[df_tmp.index < clipping_index]
         dataframes["/localization/kinematic_state"] = df
+    else:
+        print("No endpoint")
     return dataframes
 
 
@@ -295,6 +301,7 @@ def find_nearest_plot(df, sections):
             initial_index = counter
         counter += 1
     print("initial_index: ", initial_index)
+    print("initial position: ", df.ekf_x[initial_index], df.ekf_y[initial_index])
 
     previous_distance = float('inf')
     index = initial_index
@@ -381,7 +388,18 @@ def get_index_from_time(df, t_start=None, t_end=None):
         df.stamp = (df.stamp - df.stamp[0]) /1e9
 
     t0 = 0
-    t1 = len(df.stamp)
+    t1 = None
+    print(df.ekf_x[0], df.ekf_x[1], df.ekf_x[2])
+    for i in range(len(df.ekf_x)):
+        if i < 10: # just a buffer, i < 2 is fine
+            continue
+        if np.isnan(df.ekf_x[i]):
+            t1 = i
+            break
+    if t1 is None:
+        t1 = len(df.stamp)
+    print(t0, t1)
+
     if t_start is not None:
         t0 = df[df.stamp >= t_start].index[0]
     if t_end is not None:
@@ -465,19 +483,6 @@ def plot_trajectory(
         plot_reference_path(ax, load_reference_path(reference_path_csv_path))
 
     t0, t1 = get_index_from_time(df, t_start, t_end)
-
-    """
-    num = (df["ekf_x"] != 0).sum()
-    print(num)
-
-    print("ekf_x nonzero count:", (df.ekf_x != 0).sum())
-    print("ekf_y nonzero count:", (df.ekf_y != 0).sum())
-    print("ekf_x range:", df.ekf_x.min(), "→", df.ekf_x.max())
-    print("ekf_y range:", df.ekf_y.min(), "→", df.ekf_y.max())
-    print("DataFrame shape:", df.shape)
-    """
-
-
 
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
 
@@ -613,8 +618,8 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
     ax[0].plot(df.stamp[t0:t1], 3.6 * df.acceleration_command[t0:t1], label="accel [cmd]")
-    ax[0].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd, label="accel pedal [cmd, 0~1]")
-    ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd, label="brake pedal [cmd, 0~1]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd[t0:t1], label="accel pedal [cmd, 0~1]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd[t0:t1], label="brake pedal [cmd, 0~1]")
 
     section_stamps = []
     top_ticks = []
@@ -640,7 +645,7 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
     ax[1].grid(True, which="both")
 
 
-    ax[0].set_ylim([-10.0, 40.0])
+    ax[0].set_ylim([-10.0, 50.0])
     #ax[0].set_ylim([-2.0, 10.0])
     ax[0].legend()
     #ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
@@ -732,14 +737,14 @@ def main(argv=sys.argv):
     dataframes = clip_duplication(dataframes)
 
     df = interpolate_dataframes(dataframes)
-    print(df.ekf_x)
+    #print(df.ekf_x)
     print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
     print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
 
     sections = load_section()
     nearest_plots = find_nearest_plot(df, sections)
-    for i in nearest_plots:
-        print(i)
+    #for i in nearest_plots:
+    #    print(i)
 
 
 

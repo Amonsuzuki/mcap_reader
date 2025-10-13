@@ -217,12 +217,16 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 def clip_duplication(dataframes):
     df = dataframes["/localization/kinematic_state"]
     clipping_index = None
+    print("start position: ", df.ekf_x[1], df.ekf_y[1])
     for index in range(len(df["ekf_x"])):
-        if index <= 10:
+        if index <= 50:
             continue
-        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.001:
+        if math.sqrt((df["ekf_x"].iloc[index] - df["ekf_x"].iloc[1]) ** 2 + (df["ekf_y"].iloc[index] - df["ekf_y"].iloc[1]) ** 2) < 0.1:
             clipping_index = index
     if clipping_index:
+        print("end position: ", df.ekf_x[clipping_index], df.ekf_y[clipping_index])
+        print("end index: ", clipping_index)
+
         df_tmp = df["ekf_x"]
         df["ekf_x"] = df_tmp[df_tmp.index < clipping_index]
 
@@ -232,6 +236,8 @@ def clip_duplication(dataframes):
         df_tmp = df["ekf_yaw"]
         df["ekf_yaw"] = df_tmp[df_tmp.index < clipping_index]
         dataframes["/localization/kinematic_state"] = df
+    else:
+        print("no ednpoint")
     return dataframes
 
 
@@ -295,11 +301,13 @@ def find_nearest_plot(df, sections):
             initial_index = counter
         counter += 1
     print("initial_index: ", initial_index)
+    print("initial position: ", df.ekf_x[initial_index], df.ekf_y[initial_index])
 
     previous_distance = float('inf')
     index = initial_index
     accumulated_distance = 0
 
+    incrementer = 0
     for row in sections.iloc:
         while True:
             current_distance = math.sqrt((row.sec_x - df.ekf_x[index]) ** 2 + (row.sec_y - df.ekf_y[index]) ** 2)
@@ -312,11 +320,12 @@ def find_nearest_plot(df, sections):
             if not np.isnan(df.ekf_x[index]) and not  np.isnan(df.ekf_x[index - 1]):
                 accumulated_distance += math.sqrt((df.ekf_x[index] - df.ekf_x[index - 1]) ** 2 + (df.ekf_y[index] - df.ekf_y[index - 1]) ** 2)
         if np.isnan(df.ekf_x[index - 1]): # index - 1 == 0
-            nearest_plots.append((df.ekf_x[index], df.ekf_y[index], accumulated_distance))
+            nearest_plots.append((df.ekf_x[index], df.ekf_y[index], accumulated_distance, incrementer))
         else:
-            nearest_plots.append((df.ekf_x[index - 1], df.ekf_y[index - 1], accumulated_distance))
+            nearest_plots.append((df.ekf_x[index - 1], df.ekf_y[index - 1], accumulated_distance, incrementer))
         previous_distance = float('inf')
         accumulated_distance = 0
+        incrementer += 1
 
     return nearest_plots
 
@@ -467,9 +476,11 @@ def plot_trajectory(
 
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
 
-    ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
+    #ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
 
-    ax.plot([p[0] for p in nearest_plots], [p[1] for p in nearest_plots], "*", markersize=15.0, label="nearest_plots")
+    ax.plot([p[0] for p in nearest_plots], [p[1] for p in nearest_plots], "*", markersize=5.0, label="nearest_plots")
+    for i in range(len(nearest_plots)):
+        ax.text(nearest_plots[i][0] + 0.5, nearest_plots[i][1] + 0.5, nearest_plots[i][3], fontsize=12, fontweight="bold", color="orange")
 
     if plot_gyro_odom:
         compute_gyro_odometry(df)
@@ -528,10 +539,10 @@ def plot_trajectory(
         velocity_skip = get_interval(df, velocity_skip_duration)
         for i in range(t0, t1, velocity_skip):
             ax.text(
-                    df.ekf_x[i],
-                    df.ekf_y[i],
+                    df.ekf_x[i] + 0.5,
+                    df.ekf_y[i] + 0.5,
                     f"{m_per_sec_to_kmh(df.vx[i]):.1f}",
-                    fontsize=6,
+                    fontsize=10,
                     color="blue",
                     )
     ax.ticklabel_format(useOffset=False, style='plain', axis='both')
@@ -623,7 +634,7 @@ def main(argv=sys.argv):
     dataframes = clip_duplication(dataframes)
 
     df = interpolate_dataframes(dataframes)
-    print(df.ekf_x)
+    #print(df.ekf_x)
     print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
     print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
 
@@ -639,8 +650,8 @@ def main(argv=sys.argv):
             sections,
             nearest_plots,
             plot_gyro_odom=False,
-            plot_gnss=False,
-            plot_orientation=False,
+            plot_gnss=True,
+            plot_orientation=True,
             plot_velocity_text=True,
             map_yaml_path=args.map_yaml_path,
             #reference_path_csv_path=args.reference_path_csv_path,
