@@ -641,8 +641,8 @@ def main(argv=sys.argv):
     sections = load_section()
     nearest_plots = find_nearest_plot(df, sections)
 
-    for i in nearest_plots:
-        print(i)
+    #for i in nearest_plots:
+    #    print(i)
 
     plot_trajectory(
             dataframes,

@@ -610,7 +610,7 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
     acc_x = lowpass_filter(acc_x, cutoff_frequency, sampling_rate)
     acc_rz = lowpass_filter(acc_rz, cutoff_frequency, sampling_rate)
 
-    fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+    fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
     print(df.stamp[t0:t1])
 
@@ -623,6 +623,22 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
 
     section_stamps = []
     top_ticks = []
+
+    """
+    # head xticks are not shown
+    counter = 0
+    for i in range(len(df.ekf_x)):
+        if df.ekf_x[i] == nearest_plots[0][0] and df.ekf_y[i] == nearest_plots[0][1]:
+            counter = i
+    for i in range(len(nearest_plots)):
+        for j in range(counter, len(df.ekf_x)):
+            if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
+                section_stamps.append(df.stamp[j])
+                counter = j
+                break
+        top_ticks.append(nearest_plots[i][3])
+    """
+    # head xticks are shown
     for i in range(len(nearest_plots)):
         for j in range(len(df.ekf_x)):
             if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
@@ -630,10 +646,21 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
                 break
         top_ticks.append(nearest_plots[i][3])
 
-    ax[0].set_xticks(section_stamps)
-    ax[0].set_xticklabels(f"{str(a)} [{str(b)}]" for a, b in zip(section_stamps, top_ticks))
-    ax[1].set_xticks(section_stamps)
-    ax[1].set_xticklabels(f"{str(a)} [{str(b)}]" for a, b in zip(section_stamps, top_ticks))
+    for a_i in ax:
+        a_i.set_xticks(section_stamps)
+        a_i.set_xticklabels([f"{a:.2f}" for a in section_stamps])
+    
+    ax[0].set_xlim(ax[0].get_xlim()) # ax[1] also, thanks to sharex
+
+    top0 = ax[0].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
+    top1 = ax[1].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
+
+    for top in (top0, top1):
+        top.set_xticks(section_stamps)
+        top.set_xticklabels([f"[{b}]" for b in top_ticks])
+        top.tick_params(axis="x", pad=2)
+    ax[0].tick_params(axis="x", which="both", labelbottom=True, bottom=True)
+
 
     # steer
     ax[1].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
