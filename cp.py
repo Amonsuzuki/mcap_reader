@@ -281,7 +281,7 @@ def interpolate_dataframes(dataframes: dict):
     return combined_df
 
 def load_section():
-    csv_path = Path.cwd() / "section.csv"
+    csv_path = Path.cwd().parent / "section.csv"
     if not csv_path.exists():
         print(f"{csv_path} not found")
         return
@@ -615,11 +615,11 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
     print(df.stamp[t0:t1])
 
     # accel
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.acceleration_command[t0:t1], label="accel [cmd]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd[t0:t1], label="accel pedal [cmd, 0~1]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd[t0:t1], label="brake pedal [cmd, 0~1]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.acceleration_command[t0:t1], label="accel [cmd]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd[t0:t1], label="accel pedal [cmd, 0~1]")
+    ax[0].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd[t0:t1], label="brake pedal [cmd, 0~1]")
 
     section_stamps = []
     top_ticks = []
@@ -650,44 +650,44 @@ def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot
         a_i.set_xticks(section_stamps)
         a_i.set_xticklabels([f"{a:.2f}" for a in section_stamps])
     
-    ax[1].set_xlim(ax[1].get_xlim()) # ax[1] also, thanks to sharex
+    ax[0].set_xlim(ax[0].get_xlim()) # ax[1] also, thanks to sharex
 
-    top0 = ax[1].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
-    top1 = ax[0].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
+    top0 = ax[0].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
+    top1 = ax[1].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
 
     for top in (top0, top1):
         top.set_xticks(section_stamps)
         top.set_xticklabels([f"[{b}]" for b in top_ticks])
         top.tick_params(axis="x", pad=2)
-    ax[1].tick_params(axis="x", which="both", labelbottom=True, bottom=True)
+    ax[0].tick_params(axis="x", which="both", labelbottom=True, bottom=True)
 
 
     # steer
-    ax[0].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
-    ax[0].plot(df.stamp[t0:t1], df.steering_tire_angle_command[t0:t1], label="steer [cmd]")
+    ax[1].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
+    ax[1].plot(df.stamp[t0:t1], df.steering_tire_angle_command[t0:t1], label="steer [cmd]")
     #ax[1].plot(df.stamp[t0:t1], df.actuation_steer_cmd[t0:t1], label="actuator_steer [cmd]") # same value as above
-    ax[0].plot(df.stamp[t0:t1], df.gyro_z[t0:t1], label="yaw [measured]")
-    ax[0].legend()
-    ax[0].yaxis.set_major_locator(ticker.MultipleLocator(1.0))
-    ax[0].grid(True, which="both")
-
-
-    ax[1].set_ylim([-10.0, 50.0])
-    #ax[0].set_ylim([-2.0, 10.0])
+    ax[1].plot(df.stamp[t0:t1], df.gyro_z[t0:t1], label="yaw [measured]")
     ax[1].legend()
-    #ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
-    ax[1].yaxis.set_major_locator(ticker.MultipleLocator(5.0))
+    ax[1].yaxis.set_major_locator(ticker.MultipleLocator(1.0))
     ax[1].grid(True, which="both")
 
-    ax[1].tick_params(axis='x', rotation=30)
+
+    ax[0].set_ylim([-10.0, 50.0])
+    #ax[0].set_ylim([-2.0, 10.0])
+    ax[0].legend()
+    #ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
+    ax[0].yaxis.set_major_locator(ticker.MultipleLocator(5.0))
+    ax[0].grid(True, which="both")
+
     ax[0].tick_params(axis='x', rotation=30)
+    ax[1].tick_params(axis='x', rotation=30)
 
     if plot_acc:
-        ax[0].plot(df.stamp[t0 + 1 : t1], 3.6 * acc_x, label="acc_x [measured]")
-        ax[0].plot(df.stamp[t0:t1], 3.6 * df.loc_acc_x[t0:t1], label="loc_acc_x [measured]")
-        ax[0].legend()
-        ax[0].yaxis.set_major_locator(ticker.MultipleLocator(2.0))
-        ax[0].grid(True, which="both")
+        ax[1].plot(df.stamp[t0 + 1 : t1], 3.6 * acc_x, label="acc_x [measured]")
+        ax[1].plot(df.stamp[t0:t1], 3.6 * df.loc_acc_x[t0:t1], label="loc_acc_x [measured]")
+        ax[1].legend()
+        ax[1].yaxis.set_major_locator(ticker.MultipleLocator(2.0))
+        ax[1].grid(True, which="both")
 
     interactive_compute_slope(ax[0])
     save_plot(fig, f"velocity_acceleration_{t0}_{t1}", save)

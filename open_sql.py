@@ -16,8 +16,6 @@ import yaml
 from os import path
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
-from scipy.signal import butter, filtfilt
-import matplotlib.ticker as ticker
 import math
 
 class TopicHandlerRegistry:
@@ -146,7 +144,7 @@ class ActuationCommandHandler(TopicHandler):
         }
 
 def read_messages(input_bag, topics: list[str]):
-    #with open("rosbag2_2025_09_30_11_43_28_0.mcap", "rb") as f:
+    print(input_bag)
     with open(input_bag, "rb") as f:
         reader = make_reader(f)
         for schema, channel, message in reader.iter_messages():
@@ -178,6 +176,8 @@ def convert_bag_to_csv(
         print("csv files already exist")
         return
 
+    input_bag_directory = current_path / input_bag
+
     print("converting bag to csv")
 
     active_topics = [handler.get_topic_name() for handler in active_handlers]
@@ -193,7 +193,7 @@ def convert_bag_to_csv(
             csv_writers[topic].writeheader()
         csv_writers[topic].writerow(d)
 
-    for topic, msg, timestamp in read_messages(input_bag, active_topics):
+    for topic, msg, timestamp in read_messages(input_bag_directory, active_topics):
         handler = TopicHandlerRegistry.get_handler(topic)
         if handler:
             write_to_csv(topic, handler.process_message(msg, timestamp))
@@ -215,6 +215,7 @@ def load_csv(active_handlers: list[TopicHandlerRegistry]):
 
     return dataframes
 
+# cutting down too much
 def clip_duplication(dataframes):
     df = dataframes["/localization/kinematic_state"]
     clipping_index = None
@@ -226,7 +227,7 @@ def clip_duplication(dataframes):
             clipping_index = index
     if clipping_index:
         print("end position: ", df.ekf_x[clipping_index], df.ekf_y[clipping_index])
-        print("index range: 1 ~ ", clipping_index)
+        print("end index: ", clipping_index)
 
         df_tmp = df["ekf_x"]
         df["ekf_x"] = df_tmp[df_tmp.index < clipping_index]
@@ -238,8 +239,9 @@ def clip_duplication(dataframes):
         df["ekf_yaw"] = df_tmp[df_tmp.index < clipping_index]
         dataframes["/localization/kinematic_state"] = df
     else:
-        print("No endpoint")
+        print("no ednpoint")
     return dataframes
+
 
 
 
@@ -281,7 +283,7 @@ def interpolate_dataframes(dataframes: dict):
     return combined_df
 
 def load_section():
-    csv_path = Path.cwd() / "section.csv"
+    csv_path = Path.cwd().parent / "section.csv"
     if not csv_path.exists():
         print(f"{csv_path} not found")
         return
@@ -328,7 +330,6 @@ def find_nearest_plot(df, sections):
         incrementer += 1
 
     return nearest_plots
-
 
 
 def map_to_world(mx, my, origin, size, resolution):
@@ -388,18 +389,7 @@ def get_index_from_time(df, t_start=None, t_end=None):
         df.stamp = (df.stamp - df.stamp[0]) /1e9
 
     t0 = 0
-    t1 = None
-    print(df.ekf_x[0], df.ekf_x[1], df.ekf_x[2])
-    for i in range(len(df.ekf_x)):
-        if i < 10: # just a buffer, i < 2 is fine
-            continue
-        if np.isnan(df.ekf_x[i]):
-            t1 = i
-            break
-    if t1 is None:
-        t1 = len(df.stamp)
-    print(t0, t1)
-
+    t1 = len(df.stamp)
     if t_start is not None:
         t0 = df[df.stamp >= t_start].index[0]
     if t_end is not None:
@@ -462,6 +452,8 @@ def m_per_sec_to_kmh(m_per_sec):
 def plot_trajectory(
         dataframes,
         df,
+        sections,
+        nearest_plots,
         t_start=None,
         t_end=None,
         plot_gyro_odom=False,
@@ -485,6 +477,12 @@ def plot_trajectory(
     t0, t1 = get_index_from_time(df, t_start, t_end)
 
     ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
+
+    #ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
+
+    ax.plot([p[0] for p in nearest_plots], [p[1] for p in nearest_plots], "*", markersize=5.0, label="nearest_plots")
+    for i in range(len(nearest_plots)):
+        ax.text(nearest_plots[i][0] + 0.5, nearest_plots[i][1] + 0.5, nearest_plots[i][3], fontsize=12, fontweight="bold", color="orange")
 
     if plot_gyro_odom:
         compute_gyro_odometry(df)
@@ -543,10 +541,10 @@ def plot_trajectory(
         velocity_skip = get_interval(df, velocity_skip_duration)
         for i in range(t0, t1, velocity_skip):
             ax.text(
-                    df.ekf_x[i],
-                    df.ekf_y[i],
+                    df.ekf_x[i] + 0.5,
+                    df.ekf_y[i] + 0.5,
                     f"{m_per_sec_to_kmh(df.vx[i]):.1f}",
-                    fontsize=6,
+                    fontsize=10,
                     color="blue",
                     )
     ax.ticklabel_format(useOffset=False, style='plain', axis='both')
@@ -562,137 +560,11 @@ def plot_trajectory(
     plt.clf()
     plt.close()
 
-def lowpass_filter(data, cutoff_freq, fs, order=5):
-    nyquist_freq = 0.5 * fs
-    normal_cutoff = cutoff_freq / nyquist_freq
-    b, a = butter(order, normal_cutoff, btype="low", analog=False)
-    y = filtfilt(b, a, data)
-    return y
-
-def interactive_compute_slope(ax):
-    while True:
-        points = plt.ginput(2, timeout=-1)
-        if len(points) < 2:
-            print("Exiting...")
-            break
-
-        x1, y1 = points[0]
-        x2, y2 = points[1]
-        if x2 != x1:
-            slope = (y2 - y1) / (x2 - x1)
-            slope_text_str = f"Slope: {slope:.2f}"
-        else:
-            slope_text_str = "Slope: undefined"
-
-        (line,) = ax.plot([x1, x2], [y1, y2], "r--", linewidth=2)
-
-        slope_text = ax.text(
-                (x1 + x2) / 2,
-                (y1 + y2) / 2,
-                slope_text_str,
-                color="blue",
-                fontsize=10,
-                ha="center",
-                )
-        plt.draw()
 
 
-
-def plot_velocity_acceleration(df, nearest_plots, t_start=None, t_end=None, plot_acc=False, save=False):
-    t0, t1 = get_index_from_time(df, t_start, t_end)
-
-    dt = np.diff(df.stamp[t0:t1])
-    acc_x = np.diff(df.vx[t0:t1]) / dt
-    acc_rz = np.diff(df.gyro_z[t0:t1]) / dt
-
-    cutoff_frequency = 1.0
-    sampling_rate = 1.0 / np.average(dt)
-    acc_x = lowpass_filter(acc_x, cutoff_frequency, sampling_rate)
-    acc_rz = lowpass_filter(acc_rz, cutoff_frequency, sampling_rate)
-
-    fig, ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-    print(df.stamp[t0:t1])
-
-    # accel
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.vx[t0:t1], label="vx [measured]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.speed_command[t0:t1], label="speed [cmd]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.acceleration_command[t0:t1], label="accel [cmd]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * df.actuation_accel_cmd[t0:t1], label="accel pedal [cmd, 0~1]")
-    ax[1].plot(df.stamp[t0:t1], 3.6 * -df.actuation_brake_cmd[t0:t1], label="brake pedal [cmd, 0~1]")
-
-    section_stamps = []
-    top_ticks = []
-
-    """
-    # head xticks are not shown
-    counter = 0
-    for i in range(len(df.ekf_x)):
-        if df.ekf_x[i] == nearest_plots[0][0] and df.ekf_y[i] == nearest_plots[0][1]:
-            counter = i
-    for i in range(len(nearest_plots)):
-        for j in range(counter, len(df.ekf_x)):
-            if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
-                section_stamps.append(df.stamp[j])
-                counter = j
-                break
-        top_ticks.append(nearest_plots[i][3])
-    """
-    # head xticks are shown
-    for i in range(len(nearest_plots)):
-        for j in range(len(df.ekf_x)):
-            if df.ekf_x[j] == nearest_plots[i][0] and df.ekf_y[j] == nearest_plots[i][1]:
-                section_stamps.append(df.stamp[j])
-                break
-        top_ticks.append(nearest_plots[i][3])
-
-    for a_i in ax:
-        a_i.set_xticks(section_stamps)
-        a_i.set_xticklabels([f"{a:.2f}" for a in section_stamps])
-    
-    ax[1].set_xlim(ax[1].get_xlim()) # ax[1] also, thanks to sharex
-
-    top0 = ax[1].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
-    top1 = ax[0].secondary_xaxis("top", functions=(lambda x: x, lambda x: x))
-
-    for top in (top0, top1):
-        top.set_xticks(section_stamps)
-        top.set_xticklabels([f"[{b}]" for b in top_ticks])
-        top.tick_params(axis="x", pad=2)
-    ax[1].tick_params(axis="x", which="both", labelbottom=True, bottom=True)
-
-
-    # steer
-    ax[0].plot(df.stamp[t0:t1], df.steer[t0:t1], label="steer [measured]")
-    ax[0].plot(df.stamp[t0:t1], df.steering_tire_angle_command[t0:t1], label="steer [cmd]")
-    #ax[1].plot(df.stamp[t0:t1], df.actuation_steer_cmd[t0:t1], label="actuator_steer [cmd]") # same value as above
-    ax[0].plot(df.stamp[t0:t1], df.gyro_z[t0:t1], label="yaw [measured]")
-    ax[0].legend()
-    ax[0].yaxis.set_major_locator(ticker.MultipleLocator(1.0))
-    ax[0].grid(True, which="both")
-
-
-    ax[1].set_ylim([-10.0, 50.0])
-    #ax[0].set_ylim([-2.0, 10.0])
-    ax[1].legend()
-    #ax[0].xaxis.set_major_locator(ticker.MultipleLocator(10.0))
-    ax[1].yaxis.set_major_locator(ticker.MultipleLocator(5.0))
-    ax[1].grid(True, which="both")
-
-    ax[1].tick_params(axis='x', rotation=30)
-    ax[0].tick_params(axis='x', rotation=30)
-
-    if plot_acc:
-        ax[0].plot(df.stamp[t0 + 1 : t1], 3.6 * acc_x, label="acc_x [measured]")
-        ax[0].plot(df.stamp[t0:t1], 3.6 * df.loc_acc_x[t0:t1], label="loc_acc_x [measured]")
-        ax[0].legend()
-        ax[0].yaxis.set_major_locator(ticker.MultipleLocator(2.0))
-        ax[0].grid(True, which="both")
-
-    interactive_compute_slope(ax[0])
-    save_plot(fig, f"velocity_acceleration_{t0}_{t1}", save)
-    plt.clf()
-    plt.close()
+def plot_velocity_acceleration(df, t_start=None, t_end=None, plot_acc=True, save=False):
+    flg = True
+    return
 
 def try_load_mpc_config():
     try:
@@ -770,31 +642,26 @@ def main(argv=sys.argv):
 
     sections = load_section()
     nearest_plots = find_nearest_plot(df, sections)
+
     #for i in nearest_plots:
     #    print(i)
 
-
-
-    """
     plot_trajectory(
             dataframes,
             df,
+            sections,
+            nearest_plots,
             plot_gyro_odom=False,
             plot_gnss=True,
-            plot_orientation=False,
+            plot_orientation=True,
             plot_velocity_text=True,
             map_yaml_path=args.map_yaml_path,
             #reference_path_csv_path=args.reference_path_csv_path,
             reference_path_csv_path="",
             save=False,
             )
-    """
 
-    plot_velocity_acceleration(df, nearest_plots, save=False)
-
-    #plot_gnss_and_ekf_with_phase_diff
-
-    rclpy.shutdown()
+    plot_velocity_acceleration(df, plot_acc=True, save=False)
 
 
 

@@ -19,6 +19,8 @@ sudo apt-get update
 sudo apt-get install -y zstd
 
 pip3 install mcap
+#pip install -U transforms3d
+
 
 for subdir in "${SUBDIRS[@]}"; do
 	echo "current directory $(pwd)"
