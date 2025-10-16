@@ -17,6 +17,7 @@ from os import path
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
 import math
+import rosbag2_py
 
 class TopicHandlerRegistry:
     _registry = {}
@@ -143,7 +144,74 @@ class ActuationCommandHandler(TopicHandler):
                 "actuation_steer_cmd": msg.actuation.steer_cmd,
         }
 
-def read_messages(input_bag, topics: list[str]):
+def read_messages_sql(input_bag, topics: list[str]):
+    print(input_bag)
+
+    storage_options = rosbag2_py.StorageOptions(
+            uri=str(input_bag), storage_id="sqlite3"
+            )
+    converter_options = rosbag2_py.ConverterOptions(
+            input_serialization_format="cdr", output_serialization_format="cdr"
+            )
+    reader = rosbag2_py.SequentialReader()
+    reader.open(storage_options, converter_options)
+
+    topic_types = reader.get_all_topics_and_types()
+
+    def typename(topic_name):
+        for topic_type in topic_types:
+            if topic_type.name == topic_name:
+                return topic_type.type
+        raise ValueError(f"topic {topic_name} not in bag")
+
+    while reader.has_next():
+        (topic, data, timestamp) = reader.read_next()
+        if topic not in topics:
+            continue
+
+        msg_type = get_message(typename(topic))
+        msg = deserialize_message(data, msg_type)
+        yield topic, msg, timestamp
+
+    del reader
+    
+def convert_bag_to_csv_sql(
+        input_bag: str,
+        active_handlers: list[TopicHandlerRegistry],
+        overwrite: bool,
+        ):
+    current_path = Path.cwd()
+    csv_paths = [
+            current_path / f"{handler.get_under_scored_topic_name()}.csv"
+            for handler in active_handlers
+            ]
+    if (not overwrite) and all([csv_path.exists() for csv_path in csv_paths]):
+        print("csv files already exist")
+        return
+
+    input_bag_directory = current_path / input_bag
+    print("converting bag to csv")
+
+    active_topics = [handler.get_topic_name() for handler in active_handlers]
+
+    csv_files = {
+            topic: open(csv_path, "w") for topic, csv_path in zip(active_topics, csv_paths)
+            }
+    csv_writers = {}
+
+    def write_to_csv(topic, d: dict):
+        if topic not in csv_writers:
+            csv_writers[topic] = csv.DictWriter(csv_files[topic], fieldnames=d.keys())
+            csv_writers[topic].writeheader()
+        csv_writers[topic].writerow(d)
+
+    for topic, msg, timestamp in read_messages_sql(input_bag_directory, active_topics):
+        handler = TopicHandlerRegistry.get_handler(topic)
+        if handler:
+            write_to_csv(topic, handler.process_message(msg, timestamp))
+
+
+def read_messages_mcap(input_bag, topics: list[str]):
     #with open("rosbag2_2025_09_30_11_43_28_0.mcap", "rb") as f:
     with open(input_bag, "rb") as f:
         reader = make_reader(f)
@@ -162,7 +230,7 @@ def read_messages(input_bag, topics: list[str]):
 
 
     
-def convert_bag_to_csv(
+def convert_bag_to_csv_mcap(
         input_bag: str,
         active_handlers: list[TopicHandlerRegistry],
         overwrite: bool,
@@ -191,10 +259,13 @@ def convert_bag_to_csv(
             csv_writers[topic].writeheader()
         csv_writers[topic].writerow(d)
 
-    for topic, msg, timestamp in read_messages(input_bag, active_topics):
+    for topic, msg, timestamp in read_messages_mcap(input_bag, active_topics):
         handler = TopicHandlerRegistry.get_handler(topic)
         if handler:
             write_to_csv(topic, handler.process_message(msg, timestamp))
+
+
+
 
 def load_csv(active_handlers: list[TopicHandlerRegistry]):
     dataframes = {}
@@ -281,6 +352,7 @@ def interpolate_dataframes(dataframes: dict):
     return combined_df
 
 def load_section():
+    # if it is Path.cwd().parent, change it
     csv_path = Path.cwd() / "section.csv"
     if not csv_path.exists():
         print(f"{csv_path} not found")
@@ -363,7 +435,7 @@ def plot_map_in_world(ax, map_data):
     ax.set_ylim([extent[2], extent[3]])
 
 def load_occupancy_grid_map(map_yaml_path: str):
-    base_path = path.dirname(map_yaml_path)
+    base_path = Path(map_yaml_path).parent
     with open(map_yaml_path, "r") as f:
         map_data = yaml.safe_load(f)
 
@@ -380,7 +452,7 @@ def load_reference_path(reference_path_csv_path: str):
     return reference_path_df
 
 def plot_reference_path(ax, ref_path_df):
-    ax.plot(ref_path_df.x_m, ref_path_df.y_m, "--", label="reference path", color="red")
+    ax.plot(ref_path_df.x_m, ref_path_df.y_m, "--", label="reference path", color="black")
 
 def get_index_from_time(df, t_start=None, t_end=None):
     if df.stamp[0] != 0:
@@ -446,9 +518,11 @@ def get_interval(df, duration: float) -> int:
 def m_per_sec_to_kmh(m_per_sec):
     return m_per_sec * 3.6
 
+
 def plot_trajectory(
         dataframes,
-        df,
+        df_mcap,
+        df_sql,
         sections,
         nearest_plots,
         t_start=None,
@@ -473,9 +547,13 @@ def plot_trajectory(
     if reference_path_csv_path != "":
         plot_reference_path(ax, load_reference_path(reference_path_csv_path))
 
-    t0, t1 = get_index_from_time(df, t_start, t_end)
+    t0, t1 = get_index_from_time(df_mcap, t_start, t_end)
 
-    ax.plot(df.ekf_x[t0:t1], df.ekf_y[t0:t1], label="ekf")
+    ax.plot(df_mcap.ekf_x[t0:t1], df_mcap.ekf_y[t0:t1], label="ekf", linewidth=3)
+
+    t0, t1 = get_index_from_time(df_sql, t_start, t_end)
+
+    ax.plot(df_sql.ekf_x[t0:t1], df_sql.ekf_y[t0:t1], label="208.5343", color="orange")
 
     #ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
 
@@ -484,12 +562,12 @@ def plot_trajectory(
         ax.text(nearest_plots[i][0] + 0.5, nearest_plots[i][1] + 0.5, nearest_plots[i][3], fontsize=12, fontweight="bold", color="orange")
 
     if plot_gyro_odom:
-        compute_gyro_odometry(df)
+        compute_gyro_odometry(df_mcap)
 
         reset_localization_indices = []
-        reset_points = compensate_gyro_odometry_by_ekf_localization(df, reset_localization_indices)
+        reset_points = compensate_gyro_odometry_by_ekf_localization(df_mcap, reset_localization_indices)
 
-        ax.plot(df.gyro_odom_x[t0:t1], df.gyro_odom_y[t0:t1], label="gyro odom")
+        ax.plot(df_mcap.gyro_odom_x[t0:t1], df_mcap.gyro_odom_y[t0:t1], label="gyro odom")
 
         if len(reset_points) > 0:
             ax.plot(
@@ -512,12 +590,12 @@ def plot_trajectory(
                 )
 
     if plot_orientation:
-        quiver_skip = get_interval(df, quiver_skip_duration)
+        quiver_skip = get_interval(df_mcap, quiver_skip_duration)
         ax.quiver(
-                df.ekf_x[t0:t1:quiver_skip],
-                df.ekf_y[t0:t1:quiver_skip],
-                np.cos(df.ekf_yaw[t0:t1:quiver_skip]),
-                np.sin(df.ekf_yaw[t0:t1:quiver_skip]),
+                df_mcap.ekf_x[t0:t1:quiver_skip],
+                df_mcap.ekf_y[t0:t1:quiver_skip],
+                np.cos(df_mcap.ekf_yaw[t0:t1:quiver_skip]),
+                np.sin(df_mcap.ekf_yaw[t0:t1:quiver_skip]),
                 angles="xy",
                 scale_units="xy",
                 scale=1,
@@ -526,10 +604,10 @@ def plot_trajectory(
                 )
         if plot_gyro_odom:
             ax.quiver(
-                    df.gyro_odom_x[t0:t1:quiver_skip],
-                    df.gyro_odom_y[t0:t1:quiver_skip],
-                    np.cos(df.gyro_odom_yaw[t0:t1:quiver_skip]),
-                    np.sin(df.gyro_odom_yaw[t0:t1:quiver_skip]),
+                    df_mcap.gyro_odom_x[t0:t1:quiver_skip],
+                    df_mcap.gyro_odom_y[t0:t1:quiver_skip],
+                    np.cos(df_mcap.gyro_odom_yaw[t0:t1:quiver_skip]),
+                    np.sin(df_mcap.gyro_odom_yaw[t0:t1:quiver_skip]),
                     angles="xy",
                     scale_units="xy",
                     scale=1,
@@ -537,12 +615,12 @@ def plot_trajectory(
                     label="gyro odom yaw",
                     )
     if plot_velocity_text:
-        velocity_skip = get_interval(df, velocity_skip_duration)
+        velocity_skip = get_interval(df_mcap, velocity_skip_duration)
         for i in range(t0, t1, velocity_skip):
             ax.text(
-                    df.ekf_x[i] + 0.5,
-                    df.ekf_y[i] + 0.5,
-                    f"{m_per_sec_to_kmh(df.vx[i]):.1f}",
+                    df_mcap.ekf_x[i] + 0.5,
+                    df_mcap.ekf_y[i] + 0.5,
+                    f"{m_per_sec_to_kmh(df_mcap.vx[i]):.1f}",
                     fontsize=10,
                     color="blue",
                     )
@@ -590,9 +668,14 @@ def parse_args(argv):
     (OCCUPANCY_GRID_MAP_YAML_PATH, REFERENCE_PATH_CSV_PATH) = try_load_mpc_config()
     parser = argparse.ArgumentParser()
     parser.add_argument(
-            "input_bag",
+            "input_bag_mcap",
             type=str,
             help="*.mcap file",
+            )
+    parser.add_argument(
+            "input_bag_sql",
+            type=str,
+            help="*.db3",
             )
     parser.add_argument(
             "-m",
@@ -629,29 +712,38 @@ def main(argv=sys.argv):
     TopicHandlerRegistry.activate_handlers(TARGET_HANDLERS)
     active_handlers = TopicHandlerRegistry.get_active_handlers()
 
-    convert_bag_to_csv(args.input_bag, active_handlers, args.overwrite)
+    # mcap
+    convert_bag_to_csv_mcap(args.input_bag_mcap, active_handlers, args.overwrite)
 
     dataframes = load_csv(active_handlers)
     dataframes = clip_duplication(dataframes)
 
-    df = interpolate_dataframes(dataframes)
+    df_mcap = interpolate_dataframes(dataframes)
     #print(df.ekf_x)
-    print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
-    print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
+    #print("ekf_x range:", df.ekf_x.max() - df.ekf_x.min())
+    #print("ekf_y range:", df.ekf_y.max() - df.ekf_y.min())
 
     sections = load_section()
-    nearest_plots = find_nearest_plot(df, sections)
+    nearest_plots = find_nearest_plot(df_mcap, sections)
 
+    # sql
+    convert_bag_to_csv_sql(args.input_bag_sql, active_handlers, args.overwrite)
+
+    dataframes = load_csv(active_handlers)
+    dataframes = clip_duplication(dataframes)
+
+    df_sql = interpolate_dataframes(dataframes)
     #for i in nearest_plots:
     #    print(i)
 
     plot_trajectory(
             dataframes,
-            df,
+            df_mcap,
+            df_sql,
             sections,
             nearest_plots,
             plot_gyro_odom=False,
-            plot_gnss=True,
+            plot_gnss=False,
             plot_orientation=True,
             plot_velocity_text=True,
             map_yaml_path=args.map_yaml_path,

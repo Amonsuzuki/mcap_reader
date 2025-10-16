@@ -17,6 +17,7 @@ from os import path
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.image as mpimg
 import math
+import rosbag2_py
 
 class TopicHandlerRegistry:
     _registry = {}
@@ -145,20 +146,36 @@ class ActuationCommandHandler(TopicHandler):
 
 def read_messages(input_bag, topics: list[str]):
     print(input_bag)
-    with open(input_bag, "rb") as f:
-        reader = make_reader(f)
-        for schema, channel, message in reader.iter_messages():
-            topic = channel.topic
-            data = message.data
-            timestamp = message.log_time
-            if topic not in topics:
-                continue
 
-            msg_type = get_message(schema.name)
-            msg = deserialize_message(data, msg_type)
-            yield topic, msg, timestamp
+    storage_options = rosbag2_py.StorageOptions(
+            uri=str(input_bag), storage_id="sqlite3"
+            )
+    converter_options = rosbag2_py.ConverterOptions(
+            input_serialization_format="cdr", output_serialization_format="cdr"
+            )
+    reader = rosbag2_py.SequentialReader()
+    reader.open(storage_options, converter_options)
 
-        del reader
+    topic_types = reader.get_all_topics_and_types()
+
+    def typename(topic_name):
+        for topic_type in topic_types:
+            if topic_type.name == topic_name:
+                return topic_type.type
+        raise ValueError(f"topic {topic_name} not in bag")
+
+    while reader.has_next():
+        (topic, data, timestamp) = reader.read_next()
+        if topic not in topics:
+            continue
+
+        msg_type = get_message(typename(topic))
+        msg = deserialize_message(data, msg_type)
+        yield topic, msg, timestamp
+
+    del reader
+
+
 
 
     
@@ -283,7 +300,8 @@ def interpolate_dataframes(dataframes: dict):
     return combined_df
 
 def load_section():
-    csv_path = Path.cwd().parent / "section.csv"
+    # if it is Path.cwd().parent, change it
+    csv_path = Path.cwd() / "section.csv"
     if not csv_path.exists():
         print(f"{csv_path} not found")
         return
@@ -365,7 +383,7 @@ def plot_map_in_world(ax, map_data):
     ax.set_ylim([extent[2], extent[3]])
 
 def load_occupancy_grid_map(map_yaml_path: str):
-    base_path = path.dirname(map_yaml_path)
+    base_path = Path(map_yaml_path).parent
     with open(map_yaml_path, "r") as f:
         map_data = yaml.safe_load(f)
 
@@ -583,7 +601,7 @@ def try_load_mpc_config():
                 Path(aic_tools_path) / "resources" / "map" / "occupancy_grid_map.yaml"
                 )
         """
-        map_yaml_path = Path.cwd().parent / "occupancy_grid_map.yaml"
+        map_yaml_path = Path.cwd() / "occupancy_grid_map.yaml"
         reference_path_csv_path = ""
     return (map_yaml_path, reference_path_csv_path)
 

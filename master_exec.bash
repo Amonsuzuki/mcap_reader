@@ -19,7 +19,7 @@ sudo apt-get update
 sudo apt-get install -y zstd
 
 pip3 install mcap
-#pip install -U transforms3d
+#pip install "numpy<1.24"
 
 
 for subdir in "${SUBDIRS[@]}"; do
