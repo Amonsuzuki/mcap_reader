@@ -553,7 +553,7 @@ def plot_trajectory(
 
     t0, t1 = get_index_from_time(df_sql, t_start, t_end)
 
-    ax.plot(df_sql.ekf_x[t0:t1], df_sql.ekf_y[t0:t1], label="208.5343", color="orange")
+    ax.plot(df_sql.ekf_x[t0:t1], df_sql.ekf_y[t0:t1], label="Autoware time", color="orange")
 
     #ax.plot(sections["sec_x"], sections["sec_y"], "*", markersize=15.9, label="sections")
 
